@@ -235,7 +235,8 @@ void LitPassFragment(
     half4 color = UniversalFragmentPBR(inputData, surfaceData);
     color.rgb = MixFog(color.rgb, inputData.fogCoord);
     color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent(_Surface));
-
+    //显示diff数据
+    //color.rgb = surfaceData.albedo;
     outColor = color;
 
 #ifdef _WRITE_RENDERING_LAYERS

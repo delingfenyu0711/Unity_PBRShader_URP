@@ -1,7 +1,7 @@
 #ifndef UNIVERSAL_LIGHTING_INCLUDED
 #define UNIVERSAL_LIGHTING_INCLUDED
 
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/BRDF.hlsl"
+#include "BRDF_dlfy.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Debug/Debugging3D.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/GlobalIllumination.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RealtimeLights.hlsl"
@@ -35,19 +35,26 @@ half3 LightingSpecular(half3 lightColor, half3 lightDir, half3 normal, half3 vie
     half3 specularReflection = specular.rgb * modifier;
     return lightColor * specularReflection;
 }
-
+//直接光实现 dlfy
 half3 LightingPhysicallyBased(BRDFData brdfData, BRDFData brdfDataClearCoat,
     half3 lightColor, half3 lightDirectionWS, half lightAttenuation,
     half3 normalWS, half3 viewDirectionWS,
     half clearCoatMask, bool specularHighlightsOff)
 {
+    //兰伯特模型
     half NdotL = saturate(dot(normalWS, lightDirectionWS));
+    //灯光结果 = 灯光颜色 * 阴影 * 兰伯特模型
+    //lightColor->灯光颜色  阴影->lightAttenuation 兰伯特模型->NdotL
     half3 radiance = lightColor * (lightAttenuation * NdotL);
-
+    //diffuse颜色
     half3 brdf = brdfData.diffuse;
+    
 #ifndef _SPECULARHIGHLIGHTS_OFF
     [branch] if (!specularHighlightsOff)
     {
+        //实现高光
+        //brdfData.specular->高光的颜色
+        //高光=高光颜色 * 高光
         brdf += brdfData.specular * DirectBRDFSpecular(brdfData, normalWS, lightDirectionWS, viewDirectionWS);
 
 #if defined(_CLEARCOAT) || defined(_CLEARCOATMAP)
@@ -164,12 +171,13 @@ half3 CalculateLightingColor(LightingData lightingData, half3 albedo)
         lightingColor += lightingData.mainLightColor;
     }
 
-    return lightingData.mainLightColor;
-
+    ///lightingData.additionalLightsColor 附加光照
     if (IsLightingFeatureEnabled(DEBUGLIGHTINGFEATUREFLAGS_ADDITIONAL_LIGHTS))
     {
+        //将附加光照累加，也包含高光
         lightingColor += lightingData.additionalLightsColor;
     }
+    
 
     if (IsLightingFeatureEnabled(DEBUGLIGHTINGFEATUREFLAGS_VERTEX_LIGHTING))
     {
@@ -252,6 +260,7 @@ half3 CalculateBlinnPhong(Light light, InputData inputData, SurfaceData surfaceD
 ////////////////////////////////////////////////////////////////////////////////
 /// PBR lighting...
 ////////////////////////////////////////////////////////////////////////////////
+//PBR实现 dlfy
 half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
 {
     #if defined(_SPECULARHIGHLIGHTS_OFF)
@@ -262,6 +271,7 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     BRDFData brdfData;
 
     // NOTE: can modify "surfaceData"...
+    //计算BRDF数据 dlfy
     InitializeBRDFData(surfaceData, brdfData);
 
     #if defined(DEBUG_DISPLAY)
@@ -292,10 +302,13 @@ half4 UniversalFragmentPBR(InputData inputData, SurfaceData surfaceData)
     if (IsMatchingLightLayer(mainLight.layerMask, meshRenderingLayers))
 #endif
     {
+        //直接光
         lightingData.mainLightColor = LightingPhysicallyBased(brdfData, brdfDataClearCoat,
                                                               mainLight,
                                                               inputData.normalWS, inputData.viewDirectionWS,
                                                               surfaceData.clearCoatMask, specularHighlightsOff);
+        //Todo:Result
+        return  half4(lightingData.mainLightColor ,0);
     }
 
     #if defined(_ADDITIONAL_LIGHTS)
