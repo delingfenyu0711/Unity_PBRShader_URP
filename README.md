@@ -17,6 +17,7 @@ Forward rendering pass logic, containing code for light interaction calculations
 Lighting utility function library, including auxiliary calculations such as light attenuation, shadow processing, and BRDF implementation
 
 ## 2. Folder Structure
+```
 Scripts/
 ├── Shader/                # All PBR-related shaders and HLSL files
 │   ├── Lit_BPR.shader
@@ -25,6 +26,7 @@ Scripts/
 │   └── [Related .meta files]
 └── Player/                # Optional: Player-related scripts interacting with PBR materials/lighting
     └── [Related files and .meta files]
+```
 - ✅ Physically accurate material response
 - ✅ Supports Metallic/Roughness workflow
 - ✅ Energy-conserving Bidirectional Reflectance Distribution Function (BRDF)
